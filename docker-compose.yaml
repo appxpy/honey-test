@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:13
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_DB: honey_db
+      POSTGRES_USER: honey_user
+      POSTGRES_PASSWORD: honey_password
+    networks:
+      - app-network
+
+  pgadmin:
+    image: dpage/pgadmin4:6.19
+    depends_on:
+      - db
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-appxpy@appxpy.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    networks:
+      - app-network
+    ports:
+      - "5050:80"
+
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    environment:
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: honey_db
+      DB_USER: honey_user
+      DB_PASSWORD: honey_password
+      DB_HOST: db
+      DB_PORT: 5432
+      DJANGO_SETTINGS_MODULE: honeyTest.settings
+      DEBUG: 0
+      ALLOWED_HOSTS: '["localhost"]'
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    networks:
+      - app-network
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
